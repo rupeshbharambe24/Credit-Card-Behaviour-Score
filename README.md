@@ -64,10 +64,10 @@ The project involves two datasets:
 
 ## How to Run
 1. Download the dataset from the provided link.
-2. Run `data_preprocessing.py` to clean and preprocess data.
-3. Train models using `train_model.py`.
-4. Predict on validation data using `predict.py`.
-5. Save the final submission file.
+2. Change the dataset path in the notebook.
+4. Execute all the cells in notebook to preprocess, train and verify the model.
+5. Predict on validation data using `prediction cell` in notebook.
+6. Save the final submission file.
 
 
 ## Dataset Access
