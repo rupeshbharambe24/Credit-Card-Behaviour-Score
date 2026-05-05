@@ -1,78 +1,69 @@
 # Credit Card Behaviour Score
 
-## Overview
-This project is based on the IIT Bombay case study for **Credit Card Behaviour Scoring**. The objective is to develop a predictive model that estimates the probability of credit card customers defaulting. The model will be used for risk management and portfolio optimization.
+A predictive model that estimates the probability of credit-card customer default. Built on the **IIT Bombay Behaviour Scoring case study** dataset.
 
-## Problem Statement
-Bank A has issued credit cards to various customers and now seeks to assess their default risk. The goal is to develop a **Behaviour Score** that predicts the likelihood of a customer defaulting based on historical and transactional data.
+## Problem
+
+Bank A has issued credit cards to ~96K customers and needs to assess each customer's likelihood of defaulting. The objective is to produce, for each account in a held-out validation set, a `predicted_probability` of default that can be used downstream for risk management and portfolio optimization.
 
 ## Dataset
-The project involves two datasets:
 
-1. **Development Data** (`Dev_data_to_be_shared.zip`):  
-   - Contains **96,806** credit card records.  
-   - Includes independent variables related to:
-     - **Credit limits** (`onus_attributes_*`)
-     - **Transaction data** (`transaction_attribute_*`)
-     - **Bureau tradelines** (`bureau_*`)
-     - **Bureau enquiries** (`bureau_enquiry_*`)
-   - A **bad_flag** column indicates whether a customer has defaulted (`1 = default, 0 = no default`).
+| File | Rows | Role |
+|------|-----:|------|
+| `Dev_data_to_be_shared.csv` | 96,806 | Training (with `bad_flag` label) |
+| `validation_data_to_be_shared.csv` | 41,792 | Held-out scoring set (no label) |
 
-2. **Validation Data** (`validation_data_to_be_shared.zip`):  
-   - Contains **41,792** records.  
-   - Has the same features as the development dataset but **without the bad_flag**.
+Feature groups:
+- `onus_attributes_*` — credit limit / on-us behaviour
+- `transaction_attribute_*` — transaction patterns
+- `bureau_*` — bureau tradelines
+- `bureau_enquiry_*` — bureau enquiries
 
-## Objective
-1. Train a **predictive model** on the **development dataset** to estimate default probability.  
-2. Apply the trained model to **validation data** to generate probabilities for each customer.  
-3. Submit a CSV file with two columns:
-   - `account_number` (Primary key)
-   - `predicted_probability` (Estimated probability of default)
-4. Document the approach, algorithms, insights, and model evaluation metrics.
+Dataset link: [Kaggle - Credit Card Behaviour Score](https://www.kaggle.com/datasets/rupeshbharambe/credit-card-behaviour-score/data).
 
 ## Approach
-1. **Data Preprocessing**
-   - Handle missing values.
-   - Feature engineering and selection.
-   - Standardization/Normalization.
 
-2. **Exploratory Data Analysis (EDA)**
-   - Understanding feature distributions.
-   - Identifying correlations with `bad_flag`.
-   - Checking data imbalance.
+1. **EDA** — class distribution, feature distributions, correlation with `bad_flag`.
+2. **Preprocessing** — missing-value handling, train/test split.
+3. **Class imbalance** — SMOTE oversampling on the training set.
+4. **Models compared** — Logistic Regression (baseline + class-weight `balanced`) and Random Forest.
+5. **Threshold tuning** — used the precision-recall curve to pick an operating threshold (`0.4718`) instead of the default `0.5`, optimizing for recall on the minority class.
+6. **Final model** — Logistic Regression saved to `behaviour_score_LR.joblib` with the chosen threshold in `model_threshold.json`.
 
-3. **Model Development**
-   - Train different models (e.g., Logistic Regression, Decision Trees, Random Forest, XGBoost).
-   - Use **AUC-ROC, Precision-Recall, and F1-score** for evaluation.
-   - Select the best model based on performance.
+## Files
 
-4. **Prediction & Validation**
-   - Apply the trained model to validation data.
-   - Generate and save predicted probabilities.
+```
+Credit-Card-Behaviour-Score/
+├── behavior_score.ipynb        # End-to-end notebook (EDA → train → evaluate → predict)
+├── behaviour_score_LR.joblib   # Trained Logistic Regression model
+├── model_threshold.json        # {"optimal_threshold": 0.4718}
+└── README.md
+```
 
-## Metrics Used
-- **AUC-ROC Curve**
-- **Precision-Recall Curve**
-- **F1 Score**
-- **Log Loss**
-- **Gini Coefficient**
+## Metrics tracked
 
-## Technologies Used
-- Python (Pandas, NumPy, Scikit-learn, XGBoost, Matplotlib, Seaborn)
-- Jupyter Notebook
-- GitHub
+- ROC-AUC, Precision, Recall, F1
+- Confusion matrix at default and tuned thresholds
+- Precision-Recall and ROC curves
 
-## How to Run
-1. Download the dataset from the provided link.
-2. Change the dataset path in the notebook.
-4. Execute all the cells in notebook to preprocess, train and verify the model.
-5. Predict on validation data using `prediction cell` in notebook.
-6. Save the final submission file.
+## Stack
 
+Python, pandas, NumPy, scikit-learn (Logistic Regression, Random Forest), imbalanced-learn (SMOTE), matplotlib, joblib.
 
-## Dataset Access
-The dataset can be accessed [here](https://www.kaggle.com/datasets/rupeshbharambe/credit-card-behaviour-score/data).
+## How to use the saved model
 
-## Author
-**[Rupesh Bharambe](https://www.linkedin.com/in/rupesh-bharambe-056a12257/)**
+```python
+import joblib, json, pandas as pd
 
+model = joblib.load("behaviour_score_LR.joblib")
+threshold = json.load(open("model_threshold.json"))["optimal_threshold"]
+
+X = pd.read_csv("validation_data_to_be_shared.csv")
+proba = model.predict_proba(X)[:, 1]
+predicted = (proba >= threshold).astype(int)
+```
+
+## How to reproduce
+
+1. Download `Dev_data_to_be_shared.csv` and `validation_data_to_be_shared.csv` from the Kaggle dataset above and place them in the project root.
+2. Open `behavior_score.ipynb` and run all cells.
